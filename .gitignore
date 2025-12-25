@@ -27,3 +27,4 @@ Thumbs.db
 service-account.json
 backend/service-account.json
 .env*
+.vercel
