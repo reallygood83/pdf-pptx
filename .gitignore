@@ -22,3 +22,8 @@ frontend/.env
 # OS files
 .DS_Store
 Thumbs.db
+
+# Sensitive files
+service-account.json
+backend/service-account.json
+.env*
