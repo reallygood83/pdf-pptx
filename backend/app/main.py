@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks, Header, HTTPException, Request
+from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from core.converter import SaaSConverter
 from core.security import key_manager
@@ -94,13 +94,13 @@ async def start_conversion(
     request: Request,
     background_tasks: BackgroundTasks,
     pdf_file: UploadFile = File(...),
-    provider: str = "gemini",
-    api_key: Optional[str] = None,
-    model: Optional[str] = None,
-    context_text: Optional[str] = None,
-    dpi: int = 144,
-    remove_watermark: bool = True,
-    generate_notes: bool = True,
+    provider: str = Form("gemini"),
+    api_key: Optional[str] = Form(None),
+    model: Optional[str] = Form(None),
+    context_text: Optional[str] = Form(None),
+    dpi: int = Form(144),
+    remove_watermark: bool = Form(True),
+    generate_notes: bool = Form(True),
     uid: Optional[str] = Header(None)
 ):
     job_id = str(uuid.uuid4())

@@ -126,7 +126,9 @@ export default function Dashboard() {
                 setDownloadUrl(data.download_url);
                 setStatus('completed');
             } else {
-                throw new Error(data.error || '변환에 실패했습니다.');
+                // FastAPI returns 'detail' for errors
+                const msg = data.detail || data.error || '변환에 실패했습니다.';
+                throw new Error(msg);
             }
         } catch (error) {
             console.error(error);
