@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -52,6 +52,11 @@ export default function Dashboard() {
         });
         return () => unsubscribe();
     }, [loading, router]);
+
+    const handleLogout = async () => {
+        await signOut(auth);
+        router.push('/');
+    };
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center bg-[#F1F1F1]">
@@ -146,6 +151,9 @@ export default function Dashboard() {
                             />
                         )}
                         <span className="font-bold hidden sm:block">{user?.displayName}</span>
+                        <Button variant="secondary" size="sm" onClick={handleLogout}>
+                            Log Out
+                        </Button>
                     </div>
                 </div>
             </nav>
