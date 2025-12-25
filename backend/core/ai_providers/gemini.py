@@ -29,7 +29,7 @@ class GeminiProvider(AIProvider):
 
         Args:
             api_key: Google AI API key
-            model: Gemini model to use (default: gemini-2.5-flash)
+            model: Gemini model to use (default: gemini-2.0-flash)
         """
         if genai is None:
             raise ImportError(
@@ -59,7 +59,10 @@ class GeminiProvider(AIProvider):
         prompt = self._get_prompt(context)
 
         # Gemini accepts PIL Image directly
-        response = self.client.generate_content([prompt, image])
+        response = self.client.generate_content(
+            [prompt, image],
+            request_options={"timeout": 30}
+        )
 
         return response.text
 

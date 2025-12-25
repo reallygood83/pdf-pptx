@@ -31,7 +31,7 @@ class OpenAIProvider(AIProvider):
 
         Args:
             api_key: OpenAI API key
-            model: GPT model to use (default: gpt-4.1)
+            model: GPT model to use (default: gpt-4o)
         """
         if openai is None:
             raise ImportError(
@@ -85,7 +85,8 @@ class OpenAIProvider(AIProvider):
                     ]
                 }
             ],
-            max_tokens=2000
+            max_tokens=2000,
+            timeout=30.0  # Set explicit timeout of 30 seconds per slide
         )
 
         return response.choices[0].message.content
