@@ -144,7 +144,7 @@ export default function Home() {
             <a href="https://x.com/reallygood83" target="_blank" className="hover:scale-110 transition-transform">
               <div className="w-8 h-8 bg-black text-white flex items-center justify-center font-black rounded-sm border-2 border-black">𝕏</div>
             </a>
-            <a href="https://github.com/reallygood83/pdf-pptx" target="_blank" className="hover:scale-110 transition-transform">
+            <a href="https://github.com/reallygood83/lm-to-pptx" target="_blank" className="hover:scale-110 transition-transform">
               <Github size={32} />
             </a>
           </div>
