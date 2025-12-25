@@ -31,7 +31,7 @@ class AnthropicProvider(AIProvider):
 
         Args:
             api_key: Anthropic API key
-            model: Claude model to use (default: claude-sonnet-4-5)
+            model: Claude model to use (default: claude-3-5-sonnet-20241022)
         """
         if anthropic is None:
             raise ImportError(
@@ -69,6 +69,7 @@ class AnthropicProvider(AIProvider):
         message = self.client.messages.create(
             model=self.model,
             max_tokens=2000,
+            timeout=30.0,  # Set explicit timeout of 30 seconds per slide
             messages=[
                 {
                     "role": "user",

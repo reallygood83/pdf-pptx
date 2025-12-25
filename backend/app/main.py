@@ -155,7 +155,7 @@ async def start_conversion(
     # Convert
     effective_model = model
     if provider == 'gemini' and not effective_model:
-        effective_model = 'gemini-2.5-flash'
+        effective_model = 'gemini-2.0-flash'
 
     try:
         converter = SaaSConverter(
