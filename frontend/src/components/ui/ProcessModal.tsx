@@ -89,7 +89,6 @@ export default function ProcessModal({ isOpen }: ProcessModalProps) {
                                     animate={{ width: ["0%", "30%", "60%", "90%"] }}
                                     transition={{ duration: 15, repeat: Infinity }}
                                 />
-                                <div className="absolute inset-0 bg-[url('/stripe-pattern.png')] opacity-20"></div>
                             </div>
 
                             {/* Dynamic Text */}
