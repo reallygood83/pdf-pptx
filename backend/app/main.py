@@ -1,9 +1,10 @@
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from .core.converter import SaaSConverter
+from core.converter import SaaSConverter
 import os
 import uuid
 from pathlib import Path
+from typing import Optional, List
 
 app = FastAPI(title="NotePPT API")
 
