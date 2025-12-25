@@ -90,7 +90,8 @@ class GrokProvider(AIProvider):
                     ]
                 }
             ],
-            max_tokens=2000
+            max_tokens=2000,
+            timeout=30.0  # Set explicit timeout of 30 seconds per slide
         )
 
         return response.choices[0].message.content
