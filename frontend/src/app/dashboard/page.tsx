@@ -220,9 +220,12 @@ export default function Dashboard() {
                                 className="mt-6 p-6 bg-[#A3FFAC] border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                             >
                                 <h4 className="font-black text-xl mb-2 flex items-center gap-2">
-                                    <CheckCircle2 /> 변환 완료!
+                                    <CheckCircle2 /> 생성이 완료되었습니다.
                                 </h4>
-                                <p className="font-bold mb-4">파일이 자동으로 다운로드되었습니다.<br />(다운로드 폴더를 확인해주세요)</p>
+                                <p className="font-bold mb-4">파일이 다운로드 폴더에 저장되었습니다.</p>
+                                <Button variant="primary" onClick={() => setStatus('idle')}>
+                                    닫기
+                                </Button>
                             </motion.div>
                         )}
 
