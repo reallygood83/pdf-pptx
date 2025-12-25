@@ -5,6 +5,10 @@ import os
 import uuid
 from pathlib import Path
 from typing import Optional, List
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv()
 
 app = FastAPI(title="NotePPT API")
 
@@ -43,10 +47,22 @@ async def start_conversion(
     with open(pdf_path, "wb") as buffer:
         buffer.write(await pdf_file.read())
         
+    # API Key fallback to environment variables
+    effective_api_key = api_key
+    if not effective_api_key:
+        if provider == 'gemini':
+            effective_api_key = os.getenv("GOOGLE_API_KEY")
+        elif provider == 'openai':
+            effective_api_key = os.getenv("OPENAI_API_KEY")
+        elif provider == 'anthropic':
+            effective_api_key = os.getenv("ANTHROPIC_API_KEY")
+        elif provider == 'grok':
+            effective_api_key = os.getenv("XAI_API_KEY")
+
     # Initialize Converter
     converter = SaaSConverter(
         provider=provider,
-        api_key=api_key,
+        api_key=effective_api_key,
         model=model,
         dpi=dpi,
         remove_watermark=remove_watermark
