@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+python-multipart
+python-pptx
+PyMuPDF
+google-generativeai
+openai
+anthropic
+python-dotenv
+pillow
+firebase-admin
