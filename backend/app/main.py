@@ -44,8 +44,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-TEMP_DIR = Path("temp")
-TEMP_DIR.mkdir(exist_ok=True)
+import tempfile
+
+# Use /tmp for Cloud Run (Read-only filesystem elsewhere)
+TEMP_DIR = Path(tempfile.gettempdir())
+# TEMP_DIR.mkdir(exist_ok=True) # /tmp always exists
 
 @app.get("/")
 def read_root():

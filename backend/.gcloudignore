@@ -18,4 +18,4 @@ dist/
 .DS_Store
 .vscode/
 .idea/
-service-account.json
+
