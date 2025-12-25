@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { Presentation, Upload, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 
 export default function Dashboard() {
     const router = useRouter();
@@ -133,9 +134,9 @@ export default function Dashboard() {
             {/* Mini Nav */}
             <nav className="border-b-4 border-black bg-white p-4 mb-10">
                 <div className="max-w-5xl mx-auto flex justify-between items-center">
-                    <div className="flex items-center gap-2 font-black text-xl">
+                    <Link href="/" className="flex items-center gap-2 font-black text-xl hover:text-[#FF90E8] transition-colors">
                         <Presentation /> NotePPT Dashboard
-                    </div>
+                    </Link>
                     <div className="flex items-center gap-4">
                         {user?.photoURL && (
                             <img
