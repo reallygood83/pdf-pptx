@@ -35,12 +35,13 @@ class SaaSConverter:
         # Initialize AI Provider
         if api_key:
             if self.provider_name == 'gemini':
-                self.ai_provider = GeminiProvider(api_key, model or "gemini-2.0-flash")
+                self.ai_provider = GeminiProvider(api_key, model or "gemini-2.5-flash")
             elif self.provider_name == 'openai':
                 self.ai_provider = OpenAIProvider(api_key, model or "gpt-4o")
             elif self.provider_name in ['anthropic', 'claude']:
                 self.ai_provider = AnthropicProvider(api_key, model or "claude-3-5-sonnet-20241022")
             elif self.provider_name in ['grok', 'xai']:
+                # grok-2-1212 confirmed to support vision
                 self.ai_provider = GrokProvider(api_key, model or "grok-2-1212")
             else:
                 raise ValueError(f"지원하지 않는 AI 프로바이더입니다: {provider}")
