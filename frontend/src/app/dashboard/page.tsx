@@ -120,14 +120,25 @@ export default function Dashboard() {
                 body: formData,
             });
 
-            const data = await response.json();
-
             if (response.ok) {
-                setDownloadUrl(data.download_url);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `converted_${new Date().getTime()}.pptx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
                 setStatus('completed');
             } else {
-                // FastAPI returns 'detail' for errors
-                const msg = data.detail || data.error || '변환에 실패했습니다.';
+                let msg = '변환에 실패했습니다.';
+                try {
+                    const errorData = await response.json();
+                    msg = errorData.detail || errorData.error || msg;
+                } catch (e) {
+                    msg = await response.text();
+                }
                 throw new Error(msg);
             }
         } catch (error) {
@@ -211,10 +222,7 @@ export default function Dashboard() {
                                 <h4 className="font-black text-xl mb-2 flex items-center gap-2">
                                     <CheckCircle2 /> 변환 완료!
                                 </h4>
-                                <p className="font-bold mb-4">성공적으로 PPTX 파일이 생성되었습니다.</p>
-                                <Button variant="primary" onClick={() => window.open(downloadUrl)}>
-                                    📥 파일 다운로드 받기
-                                </Button>
+                                <p className="font-bold mb-4">파일이 자동으로 다운로드되었습니다.<br />(다운로드 폴더를 확인해주세요)</p>
                             </motion.div>
                         )}
 

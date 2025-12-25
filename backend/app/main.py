@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, Header, HTTPException, Request
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from core.converter import SaaSConverter
 from core.security import key_manager
@@ -8,27 +9,26 @@ from pathlib import Path
 from typing import Optional, List, Dict
 from dotenv import load_dotenv
 import firebase_admin
-from firebase_admin import credentials, auth, firestore, storage
+from firebase_admin import credentials, auth, firestore
 from pydantic import BaseModel
-import datetime
 
 # Load .env file
 load_dotenv()
 
 # Initialize Firebase Admin
-# In production, use service account JSON path or env var
 cred_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
-storage_bucket = os.getenv("STORAGE_BUCKET")
 
 if cred_path and os.path.exists(cred_path):
     cred = credentials.Certificate(cred_path)
-    firebase_admin.initialize_app(cred, {'storageBucket': storage_bucket})
-else:
-    # Fallback/Default for local or if env is not structured yet
     try:
-        firebase_admin.initialize_app(options={'storageBucket': storage_bucket})
-    except Exception:
-        print("Firebase Admin could not be initialized. Some features may not work.")
+        firebase_admin.get_app()
+    except ValueError:
+        firebase_admin.initialize_app(cred)
+else:
+    try:
+        firebase_admin.get_app()
+    except ValueError:
+        firebase_admin.initialize_app()
 
 db = firestore.client()
 
@@ -45,13 +45,13 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"]
 )
 
 import tempfile
 
 # Use /tmp for Cloud Run (Read-only filesystem elsewhere)
 TEMP_DIR = Path(tempfile.gettempdir())
-# TEMP_DIR.mkdir(exist_ok=True) # /tmp always exists
 
 @app.get("/")
 def read_root():
@@ -92,6 +92,14 @@ async def get_keys(uid: str = Header(...)):
         return {p: True for p in encrypted_keys}
     return {}
 
+def cleanup_files(paths: List[Path]):
+    for path in paths:
+        try:
+            if path.exists():
+                os.remove(path)
+        except Exception as e:
+            print(f"Error cleaning up {path}: {e}")
+
 @app.post("/convert")
 async def start_conversion(
     request: Request,
@@ -110,6 +118,7 @@ async def start_conversion(
     pdf_path = TEMP_DIR / f"{job_id}.pdf"
     pptx_path = TEMP_DIR / f"{job_id}.pptx"
     
+    # Save uploaded PDF
     with open(pdf_path, "wb") as buffer:
         buffer.write(await pdf_file.read())
         
@@ -117,17 +126,18 @@ async def start_conversion(
     effective_api_key = api_key
     
     if not effective_api_key and uid:
-        # Try fetch from Firestore
-        user_ref = db.collection("users").document(uid).get()
-        if user_ref.exists:
-            data = user_ref.to_dict()
-            encrypted_keys = data.get("keys", {})
-            encrypted_val = encrypted_keys.get(provider)
-            if encrypted_val:
-                effective_api_key = key_manager.decrypt_key(encrypted_val)
+        try:
+            user_ref = db.collection("users").document(uid).get()
+            if user_ref.exists:
+                data = user_ref.to_dict()
+                encrypted_keys = data.get("keys", {})
+                encrypted_val = encrypted_keys.get(provider)
+                if encrypted_val:
+                    effective_api_key = key_manager.decrypt_key(encrypted_val)
+        except Exception:
+            pass
 
     if not effective_api_key:
-        # Fallback to Server Keys
         if provider == 'gemini':
             effective_api_key = os.getenv("GOOGLE_API_KEY")
         elif provider == 'openai':
@@ -138,66 +148,40 @@ async def start_conversion(
             effective_api_key = os.getenv("XAI_API_KEY")
 
     if not effective_api_key:
-        raise HTTPException(status_code=400, detail=f"{provider} API Key is required. Please provide it or save it in settings.")
+        # Cleanup
+        if pdf_path.exists(): os.remove(pdf_path)
+        raise HTTPException(status_code=400, detail=f"{provider} API Key is required.")
 
-    # Initialize Converter
-    converter = SaaSConverter(
-        provider=provider,
-        api_key=effective_api_key,
-        model=model,
-        dpi=dpi,
-        remove_watermark=remove_watermark
-    )
-    
-    # Run conversion
-    converter.convert(
-        pdf_path, 
-        pptx_path, 
-        generate_notes=generate_notes, 
-        context=context_text
-    )
-    
-    # Upload to Firebase Storage
+    # Convert
     try:
-        bucket = storage.bucket()
-        blob = bucket.blob(f"presentations/{job_id}.pptx")
-        blob.upload_from_filename(str(pptx_path))
-        
-        # Make the blob publicly accessible or generate signed URL
-        # For simplicity and security, using signed URL valid for 1 hour
-        download_url = blob.generate_signed_url(expiration=datetime.timedelta(hours=1))
-        
-        # Clean up local files immediately
-        try:
-            os.remove(pdf_path)
-            os.remove(pptx_path)
-        except:
-            pass
-            
-    except Exception as e:
-        print(f"Storage Upload Error: {e}")
-        # Fallback to local (though it might fail on Cloud Run for download)
-        # Force HTTPS for Cloud Run URLs
-        base_url = str(request.base_url)
-        if "run.app" in base_url and base_url.startswith("http://"):
-            base_url = base_url.replace("http://", "https://")
-        download_url = f"{base_url}download/{job_id}"
-
-    return {
-        "job_id": job_id,
-        "status": "completed",
-        "download_url": download_url
-    }
-
-@app.get("/download/{job_id}")
-def download_result(job_id: str):
-    # Serve the file
-    from fastapi.responses import FileResponse
-    pptx_path = TEMP_DIR / f"{job_id}.pptx"
-    if pptx_path.exists():
-        return FileResponse(
-            pptx_path, 
-            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            filename=f"converted.pptx"
+        converter = SaaSConverter(
+            provider=provider,
+            api_key=effective_api_key,
+            model=model,
+            dpi=dpi,
+            remove_watermark=remove_watermark
         )
-    return {"error": "File not found"}
+        
+        converter.convert(
+            pdf_path, 
+            pptx_path, 
+            generate_notes=generate_notes, 
+            context=context_text
+        )
+        
+        if not pptx_path.exists():
+            raise Exception("Conversion failed to create output file")
+            
+        # Schedule cleanup
+        background_tasks.add_task(cleanup_files, [pdf_path, pptx_path])
+        
+        return FileResponse(
+            pptx_path,
+            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            filename=f"converted_{job_id[:8]}.pptx"
+        )
+        
+    except Exception as e:
+        cleanup_files([pdf_path])
+        if pptx_path.exists(): cleanup_files([pptx_path])
+        raise HTTPException(status_code=500, detail=str(e))
