@@ -9,6 +9,7 @@ import Card from '@/components/ui/Card';
 import { Presentation, Upload, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import ProcessModal from '@/components/ui/ProcessModal';
 
 export default function Dashboard() {
     const router = useRouter();
@@ -317,6 +318,8 @@ export default function Dashboard() {
                     </div>
                 </div>
             </div>
+
+            <ProcessModal isOpen={status === 'converting'} />
         </div>
     );
 }
