@@ -20,20 +20,21 @@ class GrokProvider(AIProvider):
     """xAI Grok Vision API provider (uses OpenAI SDK)."""
 
     MODELS = [
-        "grok-2-1212",    # 최신 Grok-2 (권장)
-        "grok-2-vision-1212", 
-        "grok-beta",      # Grok Beta
+        "grok-4.1-fast",      # 최신 Grok-4.1 Fast (권장)
+        "grok-4.1",           # Grok-4.1 Standard
+        "grok-2-1212",        # Grok-2 (레거시)
+        "grok-2-vision-1212", # Grok-2 Vision (레거시)
     ]
 
     XAI_BASE_URL = "https://api.x.ai/v1"
 
-    def __init__(self, api_key: str, model: str = "grok-2-1212"):
+    def __init__(self, api_key: str, model: str = "grok-4.1-fast"):
         """
         Initialize Grok provider.
 
         Args:
             api_key: xAI API key
-            model: Grok model to use (default: grok-4-1-fast)
+            model: Grok model to use (default: grok-4.1-fast)
         """
         if openai is None:
             raise ImportError(

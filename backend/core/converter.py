@@ -41,7 +41,7 @@ class SaaSConverter:
             elif self.provider_name in ['anthropic', 'claude']:
                 self.ai_provider = AnthropicProvider(api_key, model or "claude-3-5-sonnet-20241022")
             elif self.provider_name in ['grok', 'xai']:
-                self.ai_provider = GrokProvider(api_key, model or "grok-4-1-fast")
+                self.ai_provider = GrokProvider(api_key, model or "grok-4.1-fast")
             else:
                 raise ValueError(f"지원하지 않는 AI 프로바이더입니다: {provider}")
         else:
