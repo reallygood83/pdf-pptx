@@ -153,11 +153,15 @@ async def start_conversion(
         raise HTTPException(status_code=400, detail=f"{provider} API Key is required.")
 
     # Convert
+    effective_model = model
+    if provider == 'gemini' and not effective_model:
+        effective_model = 'gemini-1.5-flash'
+
     try:
         converter = SaaSConverter(
             provider=provider,
             api_key=effective_api_key,
-            model=model,
+            model=effective_model,
             dpi=dpi,
             remove_watermark=remove_watermark
         )
@@ -172,13 +176,19 @@ async def start_conversion(
         if not pptx_path.exists():
             raise Exception("Conversion failed to create output file")
             
-        # Schedule cleanup
-        background_tasks.add_task(cleanup_files, [pdf_path, pptx_path])
+        # Schedule cleanup - Temporarily disabled to debug streaming issues
+        # background_tasks.add_task(cleanup_files, [pdf_path, pptx_path])
+        
+        headers = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
         
         return FileResponse(
             pptx_path,
             media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            filename=f"converted_{job_id[:8]}.pptx"
+            filename=f"converted_{job_id[:8]}.pptx",
+            headers=headers
         )
         
     except Exception as e:
