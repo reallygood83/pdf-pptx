@@ -154,10 +154,15 @@ async def start_conversion(
         context=context_text
     )
     
+    # Force HTTPS for Cloud Run URLs
+    base_url = str(request.base_url)
+    if "run.app" in base_url and base_url.startswith("http://"):
+        base_url = base_url.replace("http://", "https://")
+
     return {
         "job_id": job_id,
         "status": "completed",
-        "download_url": f"{request.base_url}download/{job_id}"
+        "download_url": f"{base_url}download/{job_id}"
     }
 
 @app.get("/download/{job_id}")
