@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks, Header, HTTPException
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from core.converter import SaaSConverter
 from core.security import key_manager
@@ -38,8 +38,8 @@ class UserKeys(BaseModel):
 # Add CORS for Vercel frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, replace with your Vercel URL
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -88,6 +88,7 @@ async def get_keys(uid: str = Header(...)):
 
 @app.post("/convert")
 async def start_conversion(
+    request: Request,
     background_tasks: BackgroundTasks,
     pdf_file: UploadFile = File(...),
     provider: str = "gemini",
@@ -153,7 +154,7 @@ async def start_conversion(
     return {
         "job_id": job_id,
         "status": "completed",
-        "download_url": f"http://localhost:8000/download/{job_id}"
+        "download_url": f"{request.base_url}download/{job_id}"
     }
 
 @app.get("/download/{job_id}")
