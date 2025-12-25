@@ -8,8 +8,9 @@ from pathlib import Path
 from typing import Optional, List, Dict
 from dotenv import load_dotenv
 import firebase_admin
-from firebase_admin import credentials, auth, firestore
+from firebase_admin import credentials, auth, firestore, storage
 from pydantic import BaseModel
+import datetime
 
 # Load .env file
 load_dotenv()
@@ -17,13 +18,15 @@ load_dotenv()
 # Initialize Firebase Admin
 # In production, use service account JSON path or env var
 cred_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
+storage_bucket = os.getenv("STORAGE_BUCKET")
+
 if cred_path and os.path.exists(cred_path):
     cred = credentials.Certificate(cred_path)
-    firebase_admin.initialize_app(cred)
+    firebase_admin.initialize_app(cred, {'storageBucket': storage_bucket})
 else:
     # Fallback/Default for local or if env is not structured yet
     try:
-        firebase_admin.initialize_app()
+        firebase_admin.initialize_app(options={'storageBucket': storage_bucket})
     except Exception:
         print("Firebase Admin could not be initialized. Some features may not work.")
 
@@ -154,15 +157,36 @@ async def start_conversion(
         context=context_text
     )
     
-    # Force HTTPS for Cloud Run URLs
-    base_url = str(request.base_url)
-    if "run.app" in base_url and base_url.startswith("http://"):
-        base_url = base_url.replace("http://", "https://")
+    # Upload to Firebase Storage
+    try:
+        bucket = storage.bucket()
+        blob = bucket.blob(f"presentations/{job_id}.pptx")
+        blob.upload_from_filename(str(pptx_path))
+        
+        # Make the blob publicly accessible or generate signed URL
+        # For simplicity and security, using signed URL valid for 1 hour
+        download_url = blob.generate_signed_url(expiration=datetime.timedelta(hours=1))
+        
+        # Clean up local files immediately
+        try:
+            os.remove(pdf_path)
+            os.remove(pptx_path)
+        except:
+            pass
+            
+    except Exception as e:
+        print(f"Storage Upload Error: {e}")
+        # Fallback to local (though it might fail on Cloud Run for download)
+        # Force HTTPS for Cloud Run URLs
+        base_url = str(request.base_url)
+        if "run.app" in base_url and base_url.startswith("http://"):
+            base_url = base_url.replace("http://", "https://")
+        download_url = f"{base_url}download/{job_id}"
 
     return {
         "job_id": job_id,
         "status": "completed",
-        "download_url": f"{base_url}download/{job_id}"
+        "download_url": download_url
     }
 
 @app.get("/download/{job_id}")
